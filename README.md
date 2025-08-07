@@ -7,6 +7,6 @@ Analyzes Conditional Access Policies exported via GraphRunner for common securit
     - Excluded users or groups
     - Missing recommended CAPs from a supplied config file
 
-  Use:
-  `powershell -exec bypass`
-  `CAPalyzer.ps1 [-CAPFile] <String> [-ConfigFile] <String> [[-OutFile] <String>] [<CommonParameters>]`
+  Usage:
+  ```powershell -exec bypass
+  CAPalyzer.ps1 [-CAPFile] <String> [-ConfigFile] <String> [[-OutFile] <String>] [<CommonParameters>]```
