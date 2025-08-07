@@ -1,0 +1,2 @@
+# CAPalyzer
+CAPalyzer performs analysis of exported Conditional Access Policies (CAPs) - prefferably from dafthack's GraphRunner tool. It identifies security posture weaknesses such as policies in reporting-only mode, exclusions of users or groups, and missing recommended CAPs based on Microsoft's modern best practices.
