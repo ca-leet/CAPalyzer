@@ -27,8 +27,12 @@ param (
     [string]$CAPFile,
 
     [Parameter(Mandatory = $true, HelpMessage = "Path to JSON file containing recommended CAPs")]
-    [string]$ConfigFile
+    [string]$ConfigFile,
+
+    [Parameter(Mandatory = $false, HelpMessage = "Path to save output report as text file")]
+    [string]$OutFile
 )
+
 param (
     [string]$CAPFile = "cap_export.txt",
     [string]$ConfigFile = "recommended_caps.json"
@@ -72,29 +76,29 @@ foreach ($block in $blocks) {
 $missing = $recommendedCAPs | Where-Object { $_ -notin $foundDisplayNames }
 
 # Report
-Write-Host "`n=== Conditional Access Weakness Report ===`n" -ForegroundColor Cyan
+Write-Log "`n=== Conditional Access Weakness Report ===`n" "Cyan"
 
 if ($reporting) {
-    Write-Host "[!] Policies in REPORTING mode:" -ForegroundColor Yellow
-    $reporting | ForEach-Object { Write-Host "  - $_" }
+    Write-Log "[!] Policies in REPORTING mode:" "Yellow"
+    $reporting | ForEach-Object { Write-Log "  - $_" }
 } else {
-    Write-Host "No policies are in Reporting mode." -ForegroundColor Green
+    Write-Log "No policies are in Reporting mode." "Green"
 }
 
 if ($exclusions) {
-    Write-Host "`n[!] Excluded Users/Groups:" -ForegroundColor Yellow
+    Write-Log "`n[!] Excluded Users/Groups:" "Yellow"
     $exclusions | ForEach-Object {
-        Write-Host "  - Policy: $($_.Policy) | Type: $($_.Type) | IDs: $($_.IDs)"
+        Write-Log "  - Policy: $($_.Policy) | Type: $($_.Type) | IDs: $($_.IDs)"
     }
 } else {
-    Write-Host "`nNo explicit exclusions found." -ForegroundColor Green
+    Write-Log "`nNo explicit exclusions found." "Green"
 }
 
 if ($missing) {
-    Write-Host "`n[!] Missing Recommended Policies:" -ForegroundColor Yellow
-    $missing | ForEach-Object { Write-Host "  - $_" }
+    Write-Log "`n[!] Missing Recommended Policies:" "Yellow"
+    $missing | ForEach-Object { Write-Log "  - $_" }
 } else {
-    Write-Host "`nAll recommended policies appear to be present." -ForegroundColor Green
+    Write-Log "`nAll recommended policies appear to be present." "Green"
 }
 
-Write-Host "`n==========================================`n" -ForegroundColor Cyan
+Write-Log "`n==========================================`n" "Cyan"
