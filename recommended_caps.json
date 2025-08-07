@@ -1,13 +1,12 @@
 [
-  "Require multifactor authentication for admins",
-  "Securing security info registration",
   "Block legacy authentication",
-  "Require multifactor authentication for admin portals",
-  "Require multifactor authentication for all users",
-  "Require multifactor authentication for Azure management",
-  "Require compliant or hybrid joined device or MFA for all users",
-  "Require compliant device",
-  "Block high sign-in risk",
-  "Block high user risk",
-  "Block access from untrusted locations"
+  "Require phishing-resistant MFA for administrators",
+  "Require MFA authentication strength for all users",
+  "Require MFA authentication strength for guests",
+  "Secure security info registration",
+  "Require MFA for risky sign-in",
+  "Require password change for risky users",
+  "Require authentication strength for device registration",
+  "Require device compliance",
+  "Restrict device code flow and authentication transfer"
 ]
