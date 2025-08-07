@@ -1,3 +1,34 @@
+<#
+.SYNOPSIS
+CAPalyzer - Conditional Access Policy analysis tool for GraphRunner exports.
+
+.DESCRIPTION
+Analyzes Conditional Access Policies exported via GraphRunner for common security posture weaknesses.
+Detects:
+- Policies still in "Reporting" mode
+- Excluded users or groups
+- Missing recommended CAPs from a supplied config file
+
+.PARAMETER CAPFile
+Path to the exported CAP file (e.g., from GraphRunner).
+
+.PARAMETER ConfigFile
+Path to the recommended CAPs JSON file.
+
+.EXAMPLE
+.\CAPalyzer.ps1 -CAPFile .\graphrunner_output.txt -ConfigFile .\recommended_caps.json
+
+.NOTES
+Created by [Your Name or Team], 2025.
+#>
+
+param (
+    [Parameter(Mandatory = $true, HelpMessage = "Path to CAP export file (from GraphRunner)")]
+    [string]$CAPFile,
+
+    [Parameter(Mandatory = $true, HelpMessage = "Path to JSON file containing recommended CAPs")]
+    [string]$ConfigFile
+)
 param (
     [string]$CAPFile = "cap_export.txt",
     [string]$ConfigFile = "recommended_caps.json"
