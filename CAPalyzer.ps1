@@ -61,6 +61,48 @@ function Invoke-CAPalyzer {
     )
     if ($OutFile) { $script:outputBuffer = @() }
 
+    # Define policy aliases for name mapping
+    $policyAliases = @{
+        "Require multifactor authentication for admins" = @(
+            "Microsoft-managed: Multifactor authentication for admins accessing Microsoft Admin Portals",
+            "Multifactor authentication for admins accessing Microsoft Admin Portals",
+            "MFA for admin portal access",
+            "Admin MFA policy",
+            "Require MFA for all Admins"
+        )
+        "Require multifactor authentication for admin portals" = @(
+            "Microsoft-managed: Multifactor authentication for admins accessing Microsoft Admin Portals",
+            "Multifactor authentication for admins accessing Microsoft Admin Portals",
+            "Require MFA for all Admins"
+        )
+        "Require multifactor authentication for all users" = @(
+            "Microsoft-managed: Multifactor authentication for per-user multifactor authentication users",
+            "MFA for all users",
+            "Global MFA policy"
+        )
+        "Require compliant device" = @(
+            "Require Compliant Devices for Access",
+            "Compliant device policy",
+            "Device compliance requirement"
+        )
+        "Require compliant or hybrid joined device or MFA for all users" = @(
+            "Require Compliant Devices for Access",
+            "Compliant device or MFA policy"
+        )
+        "Block high sign-in risk" = @(
+            "Microsoft-managed: Multifactor authentication and reauthentication for risky sign-ins",
+            "Risky sign-in policy",
+            "High risk sign-in block"
+        )
+        "Securing security info registration" = @(
+            "SSPR Conditional Access",
+            "Security info registration policy",
+            "SSPR policy"
+        )
+        # Add more mappings as needed
+        # "Another recommended policy" = @("Alternative name 1", "Alternative name 2")
+    }
+
     # Load recommended CAPs
     $recommendedCAPs = Get-Content $ConfigFile | ConvertFrom-Json
 
@@ -96,7 +138,26 @@ function Invoke-CAPalyzer {
         }
     }
 
-    $missing = $recommendedCAPs | Where-Object { $_ -notin $foundDisplayNames }
+    # Check for missing policies using aliases
+    $missing = @()
+    foreach ($rec in $recommendedCAPs) {
+        $aliases = @($rec)
+        if ($policyAliases.ContainsKey($rec)) {
+            $aliases += $policyAliases[$rec]
+        }
+        
+        $found = $false
+        foreach ($alias in $aliases) {
+            if ($foundDisplayNames -contains $alias) {
+                $found = $true
+                break
+            }
+        }
+        
+        if (-not $found) {
+            $missing += $rec
+        }
+    }
 
     # Report
     Write-Log "`n=== Conditional Access Weakness Report ===`n" "Cyan"
@@ -119,6 +180,7 @@ function Invoke-CAPalyzer {
 
     if ($missing) {
         Write-Log "`n[!] Missing Recommended Policies:" "Yellow"
+        Write-Log "    (Note: Manual validation recommended - policies may exist under different names)" "Cyan"
         $missing | ForEach-Object { Write-Log "  - $_" }
     } else {
         Write-Log "`nAll recommended policies appear to be present." "Green"
