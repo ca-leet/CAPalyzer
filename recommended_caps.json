@@ -1,0 +1,13 @@
+[
+  "Require multifactor authentication for admins",
+  "Securing security info registration",
+  "Block legacy authentication",
+  "Require multifactor authentication for admin portals",
+  "Require multifactor authentication for all users",
+  "Require multifactor authentication for Azure management",
+  "Require compliant or hybrid joined device or MFA for all users",
+  "Require compliant device",
+  "Block high sign-in risk",
+  "Block high user risk",
+  "Block access from untrusted locations"
+]
