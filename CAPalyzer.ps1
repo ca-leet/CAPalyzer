@@ -63,44 +63,59 @@ function Invoke-CAPalyzer {
 
     # Define policy aliases for name mapping
     $policyAliases = @{
-        "Require multifactor authentication for admins" = @(
-            "Microsoft-managed: Multifactor authentication for admins accessing Microsoft Admin Portals",
-            "Multifactor authentication for admins accessing Microsoft Admin Portals",
-            "MFA for admin portal access",
-            "Admin MFA policy",
-            "Require MFA for all Admins"
+        "Block legacy auth" = @(
+            "Block legacy authentication",
+            "Legacy authentication policy",
+            "Disable legacy protocols"
         )
-        "Require multifactor authentication for admin portals" = @(
-            "Microsoft-managed: Multifactor authentication for admins accessing Microsoft Admin Portals",
-            "Multifactor authentication for admins accessing Microsoft Admin Portals",
-            "Require MFA for all Admins"
+        "Require phishing resistant MFA for admins" = @(
+            "Phishing-resistant MFA for admins",
+            "Require strong authentication for admins",
+            "Require phishing resistant multifactor authentication for admins"
         )
-        "Require multifactor authentication for all users" = @(
-            "Microsoft-managed: Multifactor authentication for per-user multifactor authentication users",
+        "Require MFA auth strength for all users" = @(
+            "Require multifactor authentication for all users",
             "MFA for all users",
-            "Global MFA policy"
+            "Global MFA policy",
+            "Require authentication strength for all users"
         )
-        "Require compliant device" = @(
+        "Require MFA auth strength for all guests" = @(
+            "Require multifactor authentication for all guests",
+            "MFA for all guests",
+            "Require authentication strength for all guests"
+        )
+        "Secure security info registration" = @(
+            "Securing security info registration",
+            "SSPR Conditional Access",
+            "Security info registration policy"
+        )
+        "Require MFA for risky sign on" = @(
+            "Block high sign-in risk",
+            "Risky sign-in policy",
+            "Microsoft-managed: Multifactor authentication and reauthentication for risky sign-ins",
+            "Require multifactor authentication for risky sign-ins"
+        )
+        "Require password change for risky users" = @(
+            "Block high user risk",
+            "High user risk policy",
+            "Require password reset for risky users"
+        )
+        "Require auth strength for device registration" = @(
+            "Device registration MFA",
+            "MFA for device registration",
+            "Require authentication strength for device registration"
+        )
+        "Require device compliance" = @(
+            "Require compliant device",
             "Require Compliant Devices for Access",
-            "Compliant device policy",
             "Device compliance requirement"
         )
-        "Require compliant or hybrid joined device or MFA for all users" = @(
-            "Require Compliant Devices for Access",
-            "Compliant device or MFA policy"
+        "Restrict device code flow and authentication transfer" = @(
+            "Restrict device code flow",
+            "Restrict authentication transfer",
+            "Block device code flow",
+            "Block authentication transfer"
         )
-        "Block high sign-in risk" = @(
-            "Microsoft-managed: Multifactor authentication and reauthentication for risky sign-ins",
-            "Risky sign-in policy",
-            "High risk sign-in block"
-        )
-        "Securing security info registration" = @(
-            "SSPR Conditional Access",
-            "Security info registration policy",
-            "SSPR policy"
-        )
-        # Add more mappings as needed
-        # "Another recommended policy" = @("Alternative name 1", "Alternative name 2")
     }
 
     # Load recommended CAPs
