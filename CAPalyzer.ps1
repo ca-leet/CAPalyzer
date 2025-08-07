@@ -1,0 +1,69 @@
+param (
+    [string]$CAPFile = "cap_export.txt",
+    [string]$ConfigFile = "recommended_caps.json"
+)
+
+# Load recommended CAPs
+$recommendedCAPs = Get-Content $ConfigFile | ConvertFrom-Json
+
+# Read entire export file and split by policy divider
+$raw = Get-Content $CAPFile -Raw -ErrorAction Stop
+$blocks = $raw -split "={10,}"  # Adjust separator pattern if needed
+
+$reporting = @()
+$exclusions = @()
+$foundDisplayNames = @()
+
+foreach ($block in $blocks) {
+    if (-not $block.Trim()) { continue }
+    $lines = $block -split "`r?`n"
+    $name = ($lines | Where-Object { $_ -match "^Display Name:" }) -replace "^Display Name:\s*", ""
+    $state = ($lines | Where-Object { $_ -match "^Policy State:" }) -replace "^Policy State:\s*", ""
+    $foundDisplayNames += $name
+
+    if ($state -eq "Reporting") {
+        $reporting += $name
+    }
+
+    # Extract Exclude lines: check under Users and Groups
+    $exclLines = $lines | Where-Object { $_ -match "Exclude\s*:" } 
+    foreach ($idx in ($lines | Where-Object { $_ -match "Exclude\s*:" } | ForEach-Object { [Array]::IndexOf($lines, $_) })) {
+        for ($i = $idx + 1; $i -lt $lines.Count; $i++) {
+            if ($lines[$i] -match "^\s+(Users|Groups)\s*:\s*(.+)") {
+                $type = $Matches[1]
+                $ids = $Matches[2]
+                $exclusions += [PSCustomObject]@{ Policy = $name; Type = $type; IDs = $ids }
+            } elseif ($lines[$i].Trim() -eq "") { break }
+        }
+    }
+}
+
+$missing = $recommendedCAPs | Where-Object { $_ -notin $foundDisplayNames }
+
+# Report
+Write-Host "`n=== Conditional Access Weakness Report ===`n" -ForegroundColor Cyan
+
+if ($reporting) {
+    Write-Host "[!] Policies in REPORTING mode:" -ForegroundColor Yellow
+    $reporting | ForEach-Object { Write-Host "  - $_" }
+} else {
+    Write-Host "No policies are in Reporting mode." -ForegroundColor Green
+}
+
+if ($exclusions) {
+    Write-Host "`n[!] Excluded Users/Groups:" -ForegroundColor Yellow
+    $exclusions | ForEach-Object {
+        Write-Host "  - Policy: $($_.Policy) | Type: $($_.Type) | IDs: $($_.IDs)"
+    }
+} else {
+    Write-Host "`nNo explicit exclusions found." -ForegroundColor Green
+}
+
+if ($missing) {
+    Write-Host "`n[!] Missing Recommended Policies:" -ForegroundColor Yellow
+    $missing | ForEach-Object { Write-Host "  - $_" }
+} else {
+    Write-Host "`nAll recommended policies appear to be present." -ForegroundColor Green
+}
+
+Write-Host "`n==========================================`n" -ForegroundColor Cyan
