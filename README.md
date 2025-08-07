@@ -10,5 +10,5 @@ Analyzes Conditional Access Policies exported via GraphRunner for common securit
   Usage:
 ```
 powershell -exec bypass
-CAPalyzer.ps1 [-CAPFile] <String> [-ConfigFile] <String> [[-OutFile] <String>] [<CommonParameters>]
+.\CAPalyzer.ps1 [-CAPFile] <String> [-ConfigFile] <String> [[-OutFile] <String>] [<CommonParameters>]
 ```
