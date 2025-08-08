@@ -121,40 +121,84 @@ function Invoke-CAPalyzer {
     # Load recommended CAPs
     $recommendedCAPs = Get-Content $ConfigFile | ConvertFrom-Json
 
-    # Read entire export file and split by policy divider
+    # Read entire export file
     $raw = Get-Content $CAPFile -Raw -ErrorAction Stop
-    $blocks = $raw -split '={10,}'  # Adjust separator pattern if needed
-
+    
     $reporting = @()
     $exclusions = @()
     $foundDisplayNames = @()
 
-    foreach ($block in $blocks) {
-        if (-not $block.Trim()) { continue }
-        $lines = $block -split "`r?`n"
-        $name = ($lines | Where-Object { $_ -match "^Display Name:" } | Select-Object -First 1) -replace "^Display Name:\s*", ""
-        $state = ($lines | Where-Object { $_ -match "^Policy State:" } | Select-Object -First 1) -replace "^Policy State:\s*", ""
-        $foundDisplayNames += $name
+    # Try to parse as JSON first
+    try {
+        $jsonData = $raw | ConvertFrom-Json -ErrorAction Stop
+        
+        # Handle Microsoft Graph API format and other structures
+        # Check for Microsoft Graph API format with 'value' property
+        if ($jsonData.value) {
+            $policies = $jsonData.value
+        } elseif ($jsonData -is [Array]) {
+            $policies = $jsonData
+        } else {
+            $policies = @($jsonData)
+        }
+        
+        foreach ($policy in $policies) {
+            if ($policy.displayName) {
+                $name = $policy.displayName
+                $state = $policy.state
+                $foundDisplayNames += $name
 
-        # Check for various reporting state variations (case-insensitive)
-        if ($state) {
-            $reportingStates = @("Reporting", "enabledForReportingButNotEnforced", "reporting", "enabledForReporting", "reportingOnly")
-            $stateLower = $state.ToLower()
-            $reportingStatesLower = $reportingStates | ForEach-Object { $_.ToLower() }
-            if ($reportingStatesLower -contains $stateLower) {
-                $reporting += $name
+                # Check for various reporting state variations (case-insensitive)
+                if ($state) {
+                    $reportingStates = @("Reporting", "enabledForReportingButNotEnforced", "reporting", "enabledForReporting", "reportingOnly")
+                    $stateLower = $state.ToLower()
+                    $reportingStatesLower = $reportingStates | ForEach-Object { $_.ToLower() }
+                    if ($reportingStatesLower -contains $stateLower) {
+                        $reporting += $name
+                    }
+                }
+
+                # Extract exclusions from JSON structure
+                if ($policy.conditions -and $policy.conditions.users -and $policy.conditions.users.excludeUsers) {
+                    $exclusions += [PSCustomObject]@{ Policy = $name; Type = "Users"; IDs = ($policy.conditions.users.excludeUsers -join ", ") }
+                }
+                if ($policy.conditions -and $policy.conditions.users -and $policy.conditions.users.excludeGroups) {
+                    $exclusions += [PSCustomObject]@{ Policy = $name; Type = "Groups"; IDs = ($policy.conditions.users.excludeGroups -join ", ") }
+                }
             }
         }
+    }
+    catch {
+        # Fall back to text-based parsing
+        $blocks = $raw -split '={10,}'  # Adjust separator pattern if needed
 
-        # Extract Exclude lines: check under Users and Groups
-        $exclLines = $lines | Where-Object { $_ -match "Exclude\s*:" } 
-        foreach ($idx in ($lines | Where-Object { $_ -match "Exclude\s*:" } | ForEach-Object { [Array]::IndexOf($lines, $_) })) {
-            for ($i = $idx + 1; $i -lt $lines.Count; $i++) {
-                if ($lines[$i] -match "^\s+(Users|Groups)\s*:\s*(.+)") {
-                    $type = $Matches[1]
-                    $ids = $Matches[2]
-                    $exclusions += [PSCustomObject]@{ Policy = $name; Type = $type; IDs = $ids }
-                } elseif ($lines[$i].Trim() -eq "") { break }
+        foreach ($block in $blocks) {
+            if (-not $block.Trim()) { continue }
+            $lines = $block -split "`r?`n"
+            $name = ($lines | Where-Object { $_ -match "^Display Name:" -or $_ -match "(?i)^(display\s*name|name):" } | Select-Object -First 1) -replace "(?i)^(display\s*name|name):\s*", ""
+            $state = ($lines | Where-Object { $_ -match "^Policy State:" -or $_ -match "(?i)^(policy\s*state|state):" } | Select-Object -First 1) -replace "(?i)^(policy\s*state|state):\s*", ""
+            $foundDisplayNames += $name
+
+            # Check for various reporting state variations (case-insensitive)
+            if ($state) {
+                $reportingStates = @("Reporting", "enabledForReportingButNotEnforced", "reporting", "enabledForReporting", "reportingOnly")
+                $stateLower = $state.ToLower()
+                $reportingStatesLower = $reportingStates | ForEach-Object { $_.ToLower() }
+                if ($reportingStatesLower -contains $stateLower) {
+                    $reporting += $name
+                }
+            }
+
+            # Extract Exclude lines: check under Users and Groups
+            $exclLines = $lines | Where-Object { $_ -match "Exclude\s*:" } 
+            foreach ($idx in ($lines | Where-Object { $_ -match "Exclude\s*:" } | ForEach-Object { [Array]::IndexOf($lines, $_) })) {
+                for ($i = $idx + 1; $i -lt $lines.Count; $i++) {
+                    if ($lines[$i] -match "^\s+(Users|Groups)\s*:\s*(.+)") {
+                        $type = $Matches[1]
+                        $ids = $Matches[2]
+                        $exclusions += [PSCustomObject]@{ Policy = $name; Type = $type; IDs = $ids }
+                    } elseif ($lines[$i].Trim() -eq "") { break }
+                }
             }
         }
     }
@@ -187,7 +231,7 @@ function Invoke-CAPalyzer {
     Write-Log "`n=== Conditional Access Weakness Report ===`n" "Cyan"
 
     if ($reporting) {
-        Write-Log "[!] Policies in REPORTING mode:" "Yellow"
+        Write-Log "[!] Policies in Reporting mode:" "Yellow"
         $reporting | ForEach-Object { Write-Log "  - $_" }
     } else {
         Write-Log "No policies are in Reporting mode." "Green"
