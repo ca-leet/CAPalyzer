@@ -132,16 +132,18 @@ function Invoke-CAPalyzer {
     foreach ($block in $blocks) {
         if (-not $block.Trim()) { continue }
         $lines = $block -split "`r?`n"
-        $name = ($lines | Where-Object { $_ -match "^Display Name:" }) -replace "^Display Name:\s*", ""
-        $state = ($lines | Where-Object { $_ -match "^Policy State:" }) -replace "^Policy State:\s*", ""
+        $name = ($lines | Where-Object { $_ -match "^Display Name:" } | Select-Object -First 1) -replace "^Display Name:\s*", ""
+        $state = ($lines | Where-Object { $_ -match "^Policy State:" } | Select-Object -First 1) -replace "^Policy State:\s*", ""
         $foundDisplayNames += $name
 
         # Check for various reporting state variations (case-insensitive)
-        $reportingStates = @("Reporting", "enabledForReportingButNotEnforced", "reporting", "enabledForReporting", "reportingOnly")
-        $stateLower = $state.ToLower()
-        $reportingStatesLower = $reportingStates | ForEach-Object { $_.ToLower() }
-        if ($reportingStatesLower -contains $stateLower) {
-            $reporting += $name
+        if ($state) {
+            $reportingStates = @("Reporting", "enabledForReportingButNotEnforced", "reporting", "enabledForReporting", "reportingOnly")
+            $stateLower = $state.ToLower()
+            $reportingStatesLower = $reportingStates | ForEach-Object { $_.ToLower() }
+            if ($reportingStatesLower -contains $stateLower) {
+                $reporting += $name
+            }
         }
 
         # Extract Exclude lines: check under Users and Groups
