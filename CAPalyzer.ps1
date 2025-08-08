@@ -136,7 +136,11 @@ function Invoke-CAPalyzer {
         $state = ($lines | Where-Object { $_ -match "^Policy State:" }) -replace "^Policy State:\s*", ""
         $foundDisplayNames += $name
 
-        if ($state -eq "Reporting") {
+        # Check for various reporting state variations (case-insensitive)
+        $reportingStates = @("Reporting", "enabledForReportingButNotEnforced", "reporting", "enabledForReporting", "reportingOnly")
+        $stateLower = $state.ToLower()
+        $reportingStatesLower = $reportingStates | ForEach-Object { $_.ToLower() }
+        if ($reportingStatesLower -contains $stateLower) {
             $reporting += $name
         }
 
@@ -153,8 +157,10 @@ function Invoke-CAPalyzer {
         }
     }
 
-    # Check for missing policies using aliases
+    # Check for missing policies using aliases (case-insensitive)
     $missing = @()
+    $foundDisplayNamesLower = $foundDisplayNames | ForEach-Object { $_.ToLower() }
+    
     foreach ($rec in $recommendedCAPs) {
         $aliases = @($rec)
         if ($policyAliases.ContainsKey($rec)) {
@@ -163,7 +169,8 @@ function Invoke-CAPalyzer {
         
         $found = $false
         foreach ($alias in $aliases) {
-            if ($foundDisplayNames -contains $alias) {
+            $aliasLower = $alias.ToLower()
+            if ($foundDisplayNamesLower -contains $aliasLower) {
                 $found = $true
                 break
             }
